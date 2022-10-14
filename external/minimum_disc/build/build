@@ -1,0 +1,21 @@
+#!/bin/bash
+
+buildType=Release
+
+# Get paths
+sourceDir="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+buildDir="${sourceDir}/build/${buildType}"
+installDir="${buildDir}/install" # prevent accidental littering
+
+#rm -rf "${buildDir}"
+mkdir -p "${buildDir}"
+
+# Configure
+cmake "-H${sourceDir}"                          \
+      "-B${buildDir}"                           \
+      -DCMAKE_BUILD_TYPE:STRING=${buildType}    \
+      -DCMAKE_INSTALL_PREFIX:STRING="${installDir}"
+
+# Build
+cd "${buildDir}"
+make -j$(nproc)

@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Exit on statement failure
+set -e
+
+# Settings
+printHelp() {
+    echo "Web Assembly Example Build Script"
+    echo "Usage: build [OPTIONS]"
+    echo "[-h|c:|l:|C|t:|o:]"
+    echo "h     print this help and exit"
+    echo "c     set compiler arguments"
+    echo "l     set linker arguments"
+    echo "C     clean the build directory before compiling"
+    echo "t     build type (predefined compiler flags atop -c)"
+    echo "o     output"
+}
+
+buildType=Release
+compilerArgs=""
+clean=0
+output="wasm_demo.js"
+
+while getopts "hCt:o:" arg; do
+    case $arg in
+        h)  # Print help and exit
+            printHelp
+            exit 0
+            ;;
+        C)  # Set clean flag
+            clean=1
+            ;;
+        t)  # Set build type
+            buildType="${OPTARG}"
+            ;;
+        o)  # Set output
+            output="${OPTARG}"
+            ;;
+        \?) # Invalid
+            echo "Unrecognized argument: ${OPTARG}"
+            printHelp
+            exit 1
+    esac
+done
+
+# Get paths
+sourceDir="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+buildDir="${sourceDir}/build/${buildType}"
+installDir="${buildDir}/install" # prevent accidental littering
+
+# Set emscripten as the C/C++ compiler
+"${sourceDir}/external/emsdk/emsdk" install latest
+"${sourceDir}/external/emsdk/emsdk" activate latest
+source "${sourceDir}/external/emsdk/emsdk_env.sh"
+
+if [ $clean -ne 0 ]; then
+    rm -rf "${buildDir}"/*
+fi
+
+emcmake cmake "-H${sourceDir}"                                          \
+              "-B${buildDir}"                                           \
+              -DCMAKE_INSTALL_PREFIX:STRING="${installDir}"             \
+              -DCMAKE_BUILD_TYPE:STRING=Release
+
+cd "${buildDir}"
+
+# Build dependencies and bindings
+emmake make -j${nproc}
+
+# Now export the bindings to a .wasm that can be consumed from JS
+# Note: this is quite ugly and should be moved to CMake somehow.
+emcc --bind \
+     -o "${output}"                 `#generate a nodeJS script that loads the bindings`             \
+     -L external/minimum_disc       `#add built dependencies' binary paths to the include path`     \
+     -Wl,-whole-archive             `#<export everything>`                                          \
+     -lminimum_disc libwasm_demo.a  `#from these libraries`                                         \
+     -Wl,-no-whole-archive          `#</export everything>`

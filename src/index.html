@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WASM Demo</title>
+</head>
+<body>
+<canvas id="MinimumDiscCanvas" width="255" height="255" style="border:1px solid #000000;"></canvas>
+<script src="wasm_demo.js"></script>
+<script src="utilities.js"></script>
+<script>
+    Module.onRuntimeInitialized = () => {
+        var disc = new Module.MinimumDisc();
+
+        var canvas = document.getElementById('MinimumDiscCanvas');
+        callback = callbackFactory(canvas, disc);
+        canvas.addEventListener('click', callback);
+    }
+</script>
+</body>
+</html>
