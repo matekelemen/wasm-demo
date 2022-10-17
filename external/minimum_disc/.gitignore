@@ -3,5 +3,6 @@
 !external
 !inc
 !src
+!test
 !.gitignore
 !CMakeLists.txt

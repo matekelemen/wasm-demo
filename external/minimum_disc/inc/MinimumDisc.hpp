@@ -28,9 +28,7 @@ public:
 
     void include(Reference<const Point> r_point);
 
-    bool isIncluded(const Point& r_point) const noexcept;
-
-    Reference<const Point> getCenter() const noexcept;
+    Point getCenter() const;
 
     Numeric getRadius() const;
 
